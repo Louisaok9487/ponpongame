@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中國風打地鼠 - 天上人間</title>
+    <title>中國風打地鼠 - 天上人間 (動畫升級)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
@@ -15,8 +15,10 @@
             --wood: #8c5a2b;
             --wood-light: #a05a2c;
             --wood-panel: rgba(212, 163, 115, 0.7);
+            --combo-color: #3498db;
         }
 
+        /* --- 全局與背景動畫 --- */
         @keyframes celestial-glow {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -28,6 +30,7 @@
             100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
         }
 
+        /* --- 遊戲元素動畫 --- */
         @keyframes hole-hit-glow {
             0% { box-shadow: inset 0 10px 15px rgba(0,0,0,0.4), 0 0 0px var(--gold); }
             50% { box-shadow: inset 0 10px 15px rgba(0,0,0,0.4), 0 0 35px var(--gold); }
@@ -35,19 +38,48 @@
         }
         
         @keyframes emoji-hit-pop {
-            0% {
-                transform: translate(-50%, 0) scale(1);
-                filter: brightness(1);
-                opacity: 1;
-            }
-            50% {
-                transform: translate(-50%, -20%) scale(1.5); /* 向上彈出並放大 */
-                filter: brightness(3.5); /* 強烈發光 */
-            }
-            100% {
-                transform: translate(-50%, 80%) scale(0.5); /* 向下消失 */
-                opacity: 0;
-            }
+            0% { transform: translate(-50%, 0) scale(1); filter: brightness(1); opacity: 1; }
+            50% { transform: translate(-50%, -20%) scale(1.5); filter: brightness(3.5); }
+            100% { transform: translate(-50%, 80%) scale(0.5); opacity: 0; }
+        }
+
+        @keyframes float-up {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(1.2); opacity: 0; }
+        }
+
+        @keyframes combo-pop {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        /* 新增：螢幕震動動畫 */
+        @keyframes screen-shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-2px, -3px) rotate(-1deg); }
+            20% { transform: translate(2px, 3px) rotate(1deg); }
+            30% { transform: translate(-2px, 2px) rotate(0deg); }
+            40% { transform: translate(2px, -2px) rotate(1deg); }
+            50% { transform: translate(-2px, 3px) rotate(-1deg); }
+            60% { transform: translate(2px, 2px) rotate(0deg); }
+            70% { transform: translate(-2px, -2px) rotate(1deg); }
+            80% { transform: translate(2px, -3px) rotate(-1deg); }
+            90% { transform: translate(-2px, 2px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        /* 新增：時間獎勵閃爍動畫 */
+        @keyframes time-flash {
+            0%, 100% { color: white; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+            50% { color: var(--gold); text-shadow: 0 0 15px var(--gold); }
+        }
+        
+        /* 新增：開局倒數動畫 */
+        @keyframes countdown-zoom {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
 
@@ -65,13 +97,13 @@
             position: relative;
         }
 
-        /* 漂浮粒子裝飾 */
         .particle {
             position: absolute;
             background: var(--gold);
             border-radius: 50%;
             opacity: 0;
             animation: particle-float 5s infinite;
+            z-index: -1;
         }
 
         .game-container {
@@ -85,161 +117,130 @@
             border: 2px solid var(--wood);
             backdrop-filter: blur(5px);
         }
-
-        /* 裝飾：燈籠 */
-        .lantern {
-            position: absolute;
-            width: 60px;
-            height: 80px;
-            background-color: #d35400;
-            border-radius: 45% 45% 30% 30% / 60% 60% 40% 40%;
-            border: 2px solid var(--dark-red);
-            box-shadow: 0 0 15px #d35400;
-        }
-        .lantern::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 10px;
-            background-color: var(--dark-red);
-            border-radius: 5px;
-        }
-        .lantern::after {
-            content: '福';
-            font-size: 24px;
-            color: var(--gold);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-shadow: 1px 1px 2px var(--wood);
-        }
-        .lantern.left { top: -30px; left: -30px; transform: rotate(-15deg); }
-        .lantern.right { top: -30px; right: -30px; transform: rotate(15deg); }
-
-        /* 裝飾：中國結 */
-        .chinese-knot {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            bottom: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--red);
+        /* 新增：震動效果 class */
+        .game-container.shake {
+            animation: screen-shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
         }
 
         .header {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #fff;
+            text-align: center; margin-bottom: 20px; color: #fff;
             text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
         }
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
+        .header h1 { font-size: 2.5rem; font-weight: 700; }
 
         .stats {
-            display: flex;
-            justify-content: space-around;
-            font-size: 1.5rem;
+            display: flex; justify-content: space-around;
+            font-size: 1.5rem; font-weight: bold;
+            flex-wrap: wrap;
+        }
+        .high-score-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.2rem;
+        }
+        /* 新增：時間獎勵閃爍 class */
+        .time-container.flash {
+            animation: time-flash 0.5s ease-in-out 2;
+        }
+        
+        .combo-container {
+            position: absolute;
+            top: 160px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--combo-color);
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            animation: combo-pop 1s ease-in-out infinite;
+            display: none;
+            font-size: 2.5rem;
             font-weight: bold;
+            z-index: 10;
+            pointer-events: none;
         }
 
         .game-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 20px;
-            perspective: 1000px;
         }
 
         .hole {
-            position: relative;
-            width: 100%;
-            padding-bottom: 100%; /* 1:1 Aspect Ratio */
-            background: var(--wood-light);
-            border-radius: 50%;
+            position: relative; width: 100%;
+            padding-bottom: 100%;
+            background: var(--wood-light); border-radius: 50%;
             border: 5px solid var(--wood);
             box-shadow: inset 0 10px 15px rgba(0,0,0,0.4);
             transition: box-shadow 0.3s;
-            cursor: pointer; /* 讓整個洞口顯示可點擊游標 */
+            cursor: pointer;
+            /* 移除：取消所有洞口的縮放，使其大小一致 */
         }
-        .hole.hit-effect {
-            animation: hole-hit-glow 0.4s ease-out;
-        }
-        
-        .hole.row-0 { transform: scale(1.1); z-index: 3; } /* 後排 */
-        .hole.row-1 { transform: scale(1.0); z-index: 2; } /* 中排 */
-        .hole.row-2 { transform: scale(0.9); z-index: 1; } /* 前排 */
-
+        .hole.hit-effect { animation: hole-hit-glow 0.4s ease-out; }
 
         .mole {
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            width: 80%;
-            height: 80%;
+            position: absolute; bottom: 10%; left: 50%;
+            width: 80%; height: 80%;
             transform: translate(-50%, 100%);
-            transition: transform 0.2s ease-out;
-            /* 移除 mole 的點擊，交給父層 hole */
-            pointer-events: none; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 7vw;
-            user-select: none;
-            line-height: 1;
+            /* 修改：地鼠出現動畫更有彈性 */
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            pointer-events: none;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 7vw; user-select: none; line-height: 1;
         }
-        
-        .mole.up {
-            transform: translate(-50%, 0%);
-        }
+        .mole.up { transform: translate(-50%, 0%); }
+        .mole.hit { animation: emoji-hit-pop 0.5s ease-out forwards; }
 
-        .mole.hit {
-            animation: emoji-hit-pop 0.5s ease-out forwards;
+        .floating-score {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12vw;
+            font-weight: bold;
+            pointer-events: none;
+            animation: float-up 0.8s ease-out forwards;
+            color: white;
         }
+        .floating-score.plus { text-shadow: 0 0 8px var(--gold), 0 0 10px var(--gold); }
+        .floating-score.minus { text-shadow: 0 0 8px var(--red), 0 0 10px var(--red); }
 
         .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            text-align: center;
-            color: white;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex;
+            justify-content: center; align-items: center;
+            z-index: 100; text-align: center; color: white;
             backdrop-filter: blur(5px);
         }
         .modal-content {
-            background: var(--red);
-            padding: 40px;
-            border-radius: 20px;
+            background: var(--red); padding: 40px; border-radius: 20px;
             border: 5px solid var(--gold);
         }
-        .modal-content h2 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
+        .modal-content h2 { font-size: 3rem; margin-bottom: 10px; }
+        .modal-content #final-score { font-size: 1.8rem; margin-bottom: 20px; }
         .modal-content button {
-            background: var(--gold);
-            color: var(--red);
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.5rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s;
+            background: var(--gold); color: var(--red); border: none;
+            padding: 15px 30px; font-size: 1.5rem; border-radius: 10px;
+            cursor: pointer; font-weight: bold; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .modal-content button:hover {
-            transform: scale(1.1);
+        .modal-content button:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--gold); }
+        /* 新增：按鈕點擊效果 */
+        .modal-content button:active { transform: scale(0.95); }
+        
+        /* 新增：開局倒數覆蓋層 */
+        .countdown-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none; /* 預設隱藏 */
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        .countdown-text {
+            font-size: 20vw;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px var(--gold);
+            animation: countdown-zoom 1s ease-in-out forwards;
         }
 
         @media (max-width: 600px) {
@@ -248,26 +249,33 @@
             .stats { font-size: 1.2rem; }
             .lantern { width: 40px; height: 55px; }
             .lantern::after { font-size: 16px; }
+            .combo-container { font-size: 2rem; top: 130px; }
+        }
+        
+        @media (min-width: 600px) {
+            .floating-score { font-size: 72px; }
+            .countdown-text { font-size: 120px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="game-container">
+    <div class="game-container" id="game-container">
         <!-- 裝飾 -->
         <div class="lantern left"></div>
         <div class="lantern right"></div>
-        <svg class="chinese-knot" viewBox="0 0 100 100">
-            <path d="M50,0 L75,25 L50,50 L25,25 Z M50,50 L75,75 L50,100 L25,75 Z M25,25 L0,50 L25,75 M75,25 L100,50 L75,75" stroke="currentColor" stroke-width="5" fill="none"/>
-        </svg>
+        <!-- 移除：刪除中國結 SVG -->
 
         <div class="header">
             <h1>天上人間</h1>
             <div class="stats">
                 <div class="score-container">分數: <span id="score">0</span></div>
-                <div class="time-container">時間: <span id="time-left">30</span></div>
+                <div class="time-container" id="time-container">時間: <span id="time-left">30</span></div>
             </div>
+            <div class="high-score-container">最高分: <span id="high-score">0</span></div>
         </div>
+
+        <div id="combo-container" class="combo-container">連擊 x<span id="combo-count">0</span>!</div>
 
         <div id="game-grid" class="game-grid">
             <!-- 洞口會由 JavaScript 動態生成 -->
@@ -276,183 +284,330 @@
 
     <div id="start-modal" class="modal">
         <div class="modal-content">
-            <h2>準備好了嗎？</h2>
+            <h2 id="modal-title">準備好了嗎？</h2>
+            <p id="final-score"></p>
             <button id="start-button">開始遊戲</button>
         </div>
     </div>
+    
+    <!-- 新增：開局倒數覆蓋層 -->
+    <div id="countdown-overlay" class="countdown-overlay">
+        <div id="countdown-text" class="countdown-text"></div>
+    </div>
 
     <script>
-        // --- 遊戲設定 ---
-        const gameGrid = document.getElementById('game-grid');
-        const scoreDisplay = document.getElementById('score');
-        const timeLeftDisplay = document.getElementById('time-left');
-        const startModal = document.getElementById('start-modal');
-        const startButton = document.getElementById('start-button');
-        
-        const HOLE_COUNT = 9;
-        const GAME_DURATION = 30; // 遊戲時間（秒）
-        const EMOJIS = ['🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐯', '🦁', '🐮'];
+        window.addEventListener('load', () => {
+            // --- DOM 元素 ---
+            const gameContainer = document.getElementById('game-container');
+            const gameGrid = document.getElementById('game-grid');
+            const scoreDisplay = document.getElementById('score');
+            const highScoreDisplay = document.getElementById('high-score');
+            const timeContainer = document.getElementById('time-container');
+            const timeLeftDisplay = document.getElementById('time-left');
+            const startModal = document.getElementById('start-modal');
+            const startButton = document.getElementById('start-button');
+            const modalTitle = document.getElementById('modal-title');
+            const finalScoreDisplay = document.getElementById('final-score');
+            const comboContainer = document.getElementById('combo-container');
+            const comboCountDisplay = document.getElementById('combo-count');
+            const countdownOverlay = document.getElementById('countdown-overlay');
+            const countdownText = document.getElementById('countdown-text');
 
-        // --- 遊戲狀態 ---
-        let holes = [];
-        let score = 0;
-        let timeLeft = GAME_DURATION;
-        let gameTimerId = null;
-        let moleTimerId = null;
-        let lastHole;
-        let isGameActive = false;
+            // --- 遊戲設定 ---
+            const GAME_CONFIG = {
+                HOLE_COUNT: 9,
+                GAME_DURATION: 30,
+                MOLE_TYPES: {
+                    normal: { emoji: ['🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐯', '🦁', '🐮'], probability: 0.75, points: [30, 20, 10] },
+                    bomb: { emoji: '💣', probability: 0.15, points: -20 },
+                    bonusTime: { emoji: '⏰', probability: 0.10, time: 3 }
+                },
+                initialPeepInterval: 800,
+                difficultyFactor: 15
+            };
 
-        // --- 遊戲初始化 ---
-        function createGrid() {
-            for (let i = 0; i < HOLE_COUNT; i++) {
-                const hole = document.createElement('div');
-                hole.classList.add('hole');
-                
-                const row = Math.floor(i / 3);
-                hole.classList.add(`row-${row}`);
-                hole.dataset.row = row;
+            // --- 遊戲狀態 ---
+            let holes = [];
+            let score = 0;
+            let highScore = localStorage.getItem('whacAMoleHighScore') || 0;
+            let timeLeft = GAME_CONFIG.GAME_DURATION;
+            let combo = 0;
+            let gameTimerId = null;
+            let moleTimerId = null;
+            let currentPeepInterval = GAME_CONFIG.initialPeepInterval;
+            let lastHole;
+            let isGameActive = false;
 
-                const mole = document.createElement('div');
-                mole.classList.add('mole');
-                mole.dataset.index = i;
-                
-                // *** 修正：將點擊事件綁定到整個洞口 ***
-                hole.addEventListener('click', whack);
-                
-                hole.appendChild(mole);
-                gameGrid.appendChild(hole);
-                holes.push(mole);
+            // --- 遊戲初始化 ---
+            function createGrid() {
+                // 清空網格以防重新開始遊戲時重複創建
+                gameGrid.innerHTML = '';
+                holes = [];
+                for (let i = 0; i < GAME_CONFIG.HOLE_COUNT; i++) {
+                    const hole = document.createElement('div');
+                    hole.classList.add('hole');
+                    
+                    const mole = document.createElement('div');
+                    mole.classList.add('mole');
+                    
+                    hole.addEventListener('click', whack);
+                    
+                    hole.appendChild(mole);
+                    gameGrid.appendChild(hole);
+                    holes.push(mole);
+                }
             }
-        }
-        
-        // --- 粒子效果 ---
-        function createParticles() {
-            const container = document.querySelector('body');
-            for (let i = 0; i < 20; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('particle');
-                particle.style.left = `${Math.random() * 100}vw`;
-                particle.style.top = `${Math.random() * 100}vh`;
-                particle.style.width = `${Math.random() * 3 + 1}px`;
-                particle.style.height = particle.style.width;
-                particle.style.animationDelay = `${Math.random() * 5}s`;
-                particle.style.animationDuration = `${Math.random() * 3 + 2}s`;
-                container.prepend(particle);
-            }
-        }
-
-        // --- 遊戲核心邏輯 ---
-        function randomTime(min, max) {
-            return Math.round(Math.random() * (max - min) + min);
-        }
-
-        function randomHole() {
-            const idx = Math.floor(Math.random() * holes.length);
-            const hole = holes[idx];
-            if (hole === lastHole) {
-                return randomHole();
-            }
-            lastHole = hole;
-            return hole;
-        }
-
-        function peep() {
-            if (!isGameActive) return;
-
-            const mole = randomHole();
-            if (mole.classList.contains('hit')) return;
-
-            const row = parseInt(mole.parentElement.dataset.row);
             
-            const peepTimes = [randomTime(300, 700), randomTime(500, 900), randomTime(700, 1200)];
-            const time = peepTimes[row];
-            
-            mole.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-            mole.classList.add('up');
-            mole.dataset.active = "true";
+            function createParticles() {
+                const existingParticles = document.querySelectorAll('.particle');
+                if (existingParticles.length > 0) return; // 如果已存在則不重複創建
+                const container = document.querySelector('body');
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    particle.style.left = `${Math.random() * 100}vw`;
+                    particle.style.top = `${Math.random() * 100}vh`;
+                    particle.style.width = `${Math.random() * 3 + 1}px`;
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDelay = `${Math.random() * 5}s`;
+                    particle.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                    container.prepend(particle);
+                }
+            }
 
-            setTimeout(() => {
+            // --- 遊戲核心邏輯 ---
+            function randomTime(min, max) {
+                return Math.round(Math.random() * (max - min) + min);
+            }
+
+            function randomHole() {
+                const idx = Math.floor(Math.random() * holes.length);
+                const hole = holes[idx];
+                if (hole === lastHole) {
+                    return randomHole();
+                }
+                lastHole = hole;
+                return hole;
+            }
+
+            function peep() {
+                if (!isGameActive) return;
+
+                const mole = randomHole();
+                if (mole.dataset.active === "true") return;
+                
+                const rand = Math.random();
+                let moleType;
+                if (rand < GAME_CONFIG.MOLE_TYPES.normal.probability) {
+                    moleType = 'normal';
+                } else if (rand < GAME_CONFIG.MOLE_TYPES.normal.probability + GAME_CONFIG.MOLE_TYPES.bomb.probability) {
+                    moleType = 'bomb';
+                } else {
+                    moleType = 'bonusTime';
+                }
+                mole.dataset.type = moleType;
+
+                if (moleType === 'normal') {
+                    const normalEmojis = GAME_CONFIG.MOLE_TYPES.normal.emoji;
+                    mole.textContent = normalEmojis[Math.floor(Math.random() * normalEmojis.length)];
+                } else {
+                    mole.textContent = GAME_CONFIG.MOLE_TYPES[moleType].emoji;
+                }
+                
+                const peepTimes = [randomTime(400, 800), randomTime(600, 1000), randomTime(800, 1300)];
+                const time = peepTimes[Math.floor(Math.random() * peepTimes.length)]; // 隨機出現時間增加變化
+                
+                mole.classList.add('up');
+                mole.dataset.active = "true";
+
+                setTimeout(() => {
+                    if (mole.dataset.active === "true") {
+                        mole.classList.remove('up');
+                        mole.dataset.active = "false";
+                        mole.textContent = '';
+                    }
+                }, time);
+            }
+
+            function whack(e) {
+                if (!e.isTrusted || !isGameActive) return;
+
+                const mole = this.querySelector('.mole');
+
                 if (mole.dataset.active === "true") {
-                    mole.classList.remove('up');
                     mole.dataset.active = "false";
-                    mole.textContent = '';
+                    
+                    this.classList.add('hit-effect');
+                    setTimeout(() => this.classList.remove('hit-effect'), 400);
+
+                    const moleType = mole.dataset.type;
+                    let points = 0;
+
+                    switch(moleType) {
+                        case 'normal':
+                            const comboMultiplier = 1 + Math.floor(combo / 5) * 0.5;
+                            points = Math.round(GAME_CONFIG.MOLE_TYPES.normal.points[Math.floor(Math.random()*3)] * comboMultiplier); // 分數也隨機
+                            score += points;
+                            combo++;
+                            break;
+                        case 'bomb':
+                            points = GAME_CONFIG.MOLE_TYPES.bomb.points;
+                            score += points;
+                            resetCombo();
+                            // 觸發螢幕震動
+                            gameContainer.classList.add('shake');
+                            setTimeout(() => gameContainer.classList.remove('shake'), 400);
+                            break;
+                        case 'bonusTime':
+                            timeLeft += GAME_CONFIG.MOLE_TYPES.bonusTime.time;
+                            timeLeftDisplay.textContent = timeLeft;
+                            points = 5;
+                            score += points;
+                            // 觸發時間閃爍
+                            timeContainer.classList.add('flash');
+                            setTimeout(() => timeContainer.classList.remove('flash'), 1000);
+                            break;
+                    }
+                    
+                    showFloatingScore(this, points);
+                    updateScore();
+                    
+                    mole.classList.remove('up');
+                    mole.classList.add('hit');
+                    
+                    setTimeout(() => {
+                        mole.classList.remove('hit');
+                        mole.textContent = '';
+                    }, 500);
+                } else {
+                    resetCombo();
                 }
-            }, time);
-        }
-
-        // *** 修正：whack 函數現在由洞口觸發 ***
-        function whack(e) {
-            // 'this' 現在是洞口 (hole)
-            const mole = this.querySelector('.mole');
-
-            if (!e.isTrusted || !isGameActive || mole.dataset.active !== "true") return;
-
-            mole.dataset.active = "false";
+            }
             
-            // 'this' 就是 parentHole，直接使用
-            this.classList.add('hit-effect');
-            setTimeout(() => this.classList.remove('hit-effect'), 400);
+            function updateScore() {
+                scoreDisplay.textContent = score;
+                if (combo > 1) {
+                    comboContainer.style.display = 'block';
+                    comboCountDisplay.textContent = combo;
+                } else {
+                    comboContainer.style.display = 'none';
+                }
+            }
 
-            const row = parseInt(this.dataset.row);
-            const points = [30, 20, 10];
-            score += points[row];
-            scoreDisplay.textContent = score;
+            function resetCombo() {
+                combo = 0;
+                updateScore();
+            }
+
+            function showFloatingScore(holeElement, points) {
+                const scoreText = document.createElement('div');
+                scoreText.classList.add('floating-score');
+                if (points > 0) {
+                    scoreText.textContent = `+${points}`;
+                    scoreText.classList.add('plus');
+                } else if (points < 0) {
+                    scoreText.textContent = `${points}`;
+                    scoreText.classList.add('minus');
+                } else {
+                    return;
+                }
+                holeElement.appendChild(scoreText);
+                setTimeout(() => scoreText.remove(), 800);
+            }
+
+            // --- 遊戲流程控制 ---
+            function startGame() {
+                startModal.style.display = 'none';
+                
+                let count = 3;
+                countdownOverlay.style.display = 'flex';
+                
+                const countdownInterval = setInterval(() => {
+                    countdownText.textContent = count;
+                    countdownText.style.animation = 'none';
+                    countdownText.offsetHeight; // 觸發重繪
+                    countdownText.style.animation = 'countdown-zoom 1s ease-in-out forwards';
+                    
+                    count--;
+                    if (count < 0) {
+                        clearInterval(countdownInterval);
+                        countdownText.textContent = 'GO!';
+                        setTimeout(() => {
+                            countdownOverlay.style.display = 'none';
+                            runGame();
+                        }, 1000);
+                    }
+                }, 1000);
+            }
             
-            mole.classList.remove('up');
-            mole.classList.add('hit');
-            
-            setTimeout(() => {
-                mole.classList.remove('hit');
-                mole.textContent = '';
-            }, 500);
-        }
-
-        // --- 遊戲流程控制 ---
-        function startGame() {
-            isGameActive = true;
-            score = 0;
-            timeLeft = GAME_DURATION;
-            scoreDisplay.textContent = score;
-            timeLeftDisplay.textContent = timeLeft;
-            startModal.style.display = 'none';
-
-            moleTimerId = setInterval(peep, 800);
-
-            gameTimerId = setInterval(() => {
-                timeLeft--;
+            function runGame() {
+                isGameActive = true;
+                score = 0;
+                timeLeft = GAME_CONFIG.GAME_DURATION;
+                currentPeepInterval = GAME_CONFIG.initialPeepInterval;
+                resetCombo();
+                updateScore();
                 timeLeftDisplay.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    endGame();
+
+                clearInterval(moleTimerId);
+                clearInterval(gameTimerId);
+
+                moleTimerId = setInterval(peep, currentPeepInterval);
+
+                gameTimerId = setInterval(() => {
+                    timeLeft--;
+                    timeLeftDisplay.textContent = timeLeft;
+
+                    if (currentPeepInterval > 300) {
+                        currentPeepInterval -= GAME_CONFIG.difficultyFactor;
+                        clearInterval(moleTimerId);
+                        moleTimerId = setInterval(peep, currentPeepInterval);
+                    }
+
+                    if (timeLeft <= 0) {
+                        endGame();
+                    }
+                }, 1000);
+            }
+
+            function endGame() {
+                isGameActive = false;
+                clearInterval(gameTimerId);
+                clearInterval(moleTimerId);
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('whacAMoleHighScore', highScore);
+                    highScoreDisplay.textContent = highScore;
                 }
-            }, 1000);
-        }
 
-        function endGame() {
-            isGameActive = false;
-            clearInterval(gameTimerId);
-            clearInterval(moleTimerId);
+                holes.forEach(mole => {
+                    mole.classList.remove('up', 'hit');
+                    mole.dataset.active = 'false';
+                    mole.textContent = '';
+                });
 
-            holes.forEach(mole => {
-                mole.classList.remove('up', 'hit');
-                mole.dataset.active = 'false';
-                mole.textContent = '';
-            });
+                setTimeout(() => {
+                    modalTitle.textContent = `遊戲結束！`;
+                    finalScoreDisplay.textContent = `最終得分: ${score}`;
+                    startButton.textContent = '再玩一次';
+                    startModal.style.display = 'flex';
+                }, 500);
+            }
 
-            setTimeout(() => {
-                startModal.querySelector('h2').textContent = `遊戲結束！得分: ${score}`;
-                startButton.textContent = '再玩一次';
-                startModal.style.display = 'flex';
-            }, 500);
-        }
+            // --- 事件監聽 ---
+            startButton.addEventListener('click', startGame);
 
-        // --- 事件監聽 ---
-        startButton.addEventListener('click', startGame);
+            // --- 啟動 ---
+            function init() {
+                highScoreDisplay.textContent = highScore;
+                createGrid();
+                createParticles();
+            }
 
-        // --- 啟動 ---
-        createGrid();
-        createParticles();
+            init();
+        });
     </script>
 
 </body>
 </html>
- 
